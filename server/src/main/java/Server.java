@@ -1,5 +1,6 @@
 import java.io.*;
-
+import java.time.Duration;
+import java.time.Instant;
 
 public class Server
 {
@@ -24,23 +25,36 @@ public class Server
         }
     }
 
-    public static void f(String m)
-    {
-        String str = null, output = "";
-
-        InputStream s;
-        BufferedReader r;
-
-        try {
-            Process p = Runtime.getRuntime().exec(m);
-
-            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream())); 
-            while ((str = br.readLine()) != null) 
-            output += str + System.getProperty("line.separator"); 
-            br.close(); 
+    // Métodos para calcular Fibonacci y factores primos
+    public static String fibonacci(int n) {
+        if (n <= 0) return "";
+        StringBuilder result = new StringBuilder();
+        int a = 0, b = 1;
+        result.append(a).append(" ");
+        for (int i = 1; i < n; i++) {
+            result.append(b).append(" ");
+            int next = a + b;
+            a = b;
+            b = next;
         }
-        catch(Exception ex) {
-        }
+        return result.toString().trim();
     }
 
+    public static String primeFactors(int n) {
+        StringBuilder result = new StringBuilder();
+        while (n % 2 == 0) {
+            result.append(2).append(" ");
+            n /= 2;
+        }
+        for (int i = 3; i <= Math.sqrt(n); i += 2) {
+            while (n % i == 0) {
+                result.append(i).append(" ");
+                n /= i;
+            }
+        }
+        if (n > 2) {
+            result.append(n).append(" ");
+        }
+        return result.toString().trim();
+    }
 }

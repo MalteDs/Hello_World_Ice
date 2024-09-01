@@ -1,4 +1,10 @@
 import Demo.Response;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.ArrayList;
 
 public class Client
 {
@@ -8,7 +14,6 @@ public class Client
 
         try(com.zeroc.Ice.Communicator communicator = com.zeroc.Ice.Util.initialize(args,"config.client",extraArgs))
         {
-            //com.zeroc.Ice.ObjectPrx base = communicator.stringToProxy("SimplePrinter:default -p 10000");
             Response response = null;
             Demo.PrinterPrx service = Demo.PrinterPrx
                     .checkedCast(communicator.propertyToProxy("Printer.Proxy"));
@@ -17,9 +22,32 @@ public class Client
             {
                 throw new Error("Invalid proxy");
             }
-            response = service.printString("Hello World from a remote client!");
 
-            System.out.println("Respuesta del server: " + response.value + ", " + response.responseTime);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String message;
+            String userHostname = System.getProperty("user.name") + ":" + java.net.InetAddress.getLocalHost().getHostName();
+
+            while (true) {
+                System.out.print("Enter message (or 'exit' to quit): ");
+                message = reader.readLine();
+                if ("exit".equalsIgnoreCase(message)) {
+                    break;
+                }
+                message = userHostname + ":" + message;
+
+                Instant start = Instant.now(); // Registrar el tiempo antes de enviar el mensaje
+                
+                response = service.printString(message);
+
+                Instant end = Instant.now(); // Registrar el tiempo después de recibir la respuesta
+                Duration delay = Duration.between(start, end); // Calcular el tiempo de delay
+
+                System.out.println("Server response: " + response.value);
+                System.out.println("Time taken for the response: " + delay.toMillis() + " ms");
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
