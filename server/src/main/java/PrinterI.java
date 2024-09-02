@@ -12,10 +12,8 @@ public class PrinterI implements Demo.Printer
         if (s.equalsIgnoreCase("exit")) {
             responseMessage = "Exiting...";
         } else {
-            String[] parts = s.split(":", 3);  // Cambiamos a split(":", 3) para dividir solo en tres partes máximo
+            String[] parts = s.split(":", 3);
             String message = parts.length > 2 ? parts[2] : parts[1];
-            
-            // Intentamos convertir el mensaje a un número entero positivo
             try {
                 number = Integer.parseInt(message.trim());
                 if (number > 0) {
@@ -32,11 +30,11 @@ public class PrinterI implements Demo.Printer
             }
         }
 
-        Instant end = Instant.now(); // Registrar el tiempo de fin
-        Duration delay = Duration.between(start, end); // Calcular el tiempo de delay
+        Instant end = Instant.now();
+        Duration delay = Duration.between(start, end); 
         String fullResponse = "Number: " + number + "\n" + responseMessage + "\nResponse Time: " + delay.toMillis() + " ms";
 
-        System.out.println(s); // Imprimir mensaje recibido para registro
+        // System.out.println(s); 
         return new Response(0, fullResponse);
     }
 }
