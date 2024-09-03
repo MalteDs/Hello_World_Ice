@@ -26,6 +26,7 @@ public class Client
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String message;
             String userHostname = System.getProperty("user.name") + ":" + java.net.InetAddress.getLocalHost().getHostName();
+            String clientIP = java.net.InetAddress.getLocalHost().getHostAddress();
 
             while (true) {
                 System.out.print("Enter message (or 'exit' to quit): ");
@@ -33,7 +34,7 @@ public class Client
                 if ("exit".equalsIgnoreCase(message)) {
                     break;
                 }
-                message = userHostname + ":" + message;
+                message = userHostname + ":" + clientIP + ":" + message;
 
                 Instant start = Instant.now(); // Registrar el tiempo antes de enviar el mensaje
                 

@@ -13,9 +13,10 @@ public class PrinterI implements Demo.Printer
         if (s.equalsIgnoreCase("exit")) {
             responseMessage = "Exiting...";
         } else {
-            String[] parts = s.split(":", 3);
-            String userHostname = parts[0]; // Obtenemos el username/hostname del cliente
-            String message = parts.length > 2 ? parts[2] : parts[1];
+            String[] parts = s.split(":", 4);
+            String userHostname = parts[0]; 
+            String clientIP = parts.length > 2 ? parts[1] : "unknown";
+            String message = parts.length > 2 ? parts[3] : parts[2];
 
             try {
                 number = Integer.parseInt(message.trim());
@@ -25,11 +26,12 @@ public class PrinterI implements Demo.Printer
                     String primeFactors = Server.primeFactors(number);
 
                     // Imprimir en el servidor la serie de Fibonacci con el username/hostname
-                    System.out.println(userHostname + ": Fibonacci Series up to " + number + ": " + fibonacciSeries);
+                    System.out.println(userHostname + ":" + clientIP + ": Fibonacci Series up to " + number + ": " + fibonacciSeries);
 
                     // Preparar la respuesta para el cliente
                     responseMessage = String.format(
-                        "Prime Factors of %d: %s", number, primeFactors);
+                        "Client: %s\nFibonacci Series up to %d: %s\nPrime Factors: %s",
+                        userHostname, number, fibonacciSeries, primeFactors);
                 } else {
                     responseMessage = "The number must be positive.";
                 }
