@@ -6,3 +6,4 @@
 build
 ./build
 .class
+/.gradle
