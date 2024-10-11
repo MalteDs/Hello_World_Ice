@@ -1,60 +1,76 @@
-import java.io.*;
-import java.time.Duration;
-import java.time.Instant;
+import com.zeroc.Ice.*;
+import java.util.concurrent.*;
+import com.zeroc.Ice.Object;
 
-public class Server
-{
-    public static void main(String[] args)
-    {
-        java.util.List<String> extraArgs = new java.util.ArrayList<String>();
+import Demo.Response;
 
-        try(com.zeroc.Ice.Communicator communicator = com.zeroc.Ice.Util.initialize(args,"config.server",extraArgs))
-        {
-            if(!extraArgs.isEmpty())
-            {
-                System.err.println("too many arguments");
-                for(String v:extraArgs){
-                    System.out.println(v);
+public class Server {
+    private static final int THREAD_POOL_SIZE = 10;
+    private Communicator communicator;
+    private ObjectAdapter adapter;
+    private ExecutorService threadPool;
+    private volatile boolean isRunning;
+
+    public Server() {
+        this.threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+        this.isRunning = true;
+    }
+
+    public void start(String[] args) {
+        try {
+            communicator = Util.initialize(args, "config.server");
+            adapter = communicator.createObjectAdapter("Printer");
+            Object printerI = new PrinterI(this);
+            adapter.add(printerI, Util.stringToIdentity("SimplePrinter"));
+            adapter.activate();
+
+            System.out.println("Servidor iniciado. Esperando conexiones...");
+
+            while (isRunning) {
+                try {
+                    Thread.sleep(1000); // Espera para no consumir CPU innecesariamente
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
-            com.zeroc.Ice.ObjectAdapter adapter = communicator.createObjectAdapter("Printer");
-            com.zeroc.Ice.Object object = new PrinterI();
-            adapter.add(object, com.zeroc.Ice.Util.stringToIdentity("SimplePrinter"));
-            adapter.activate();
-            communicator.waitForShutdown();
+        } catch (java.lang.Exception e) {
+            e.printStackTrace();
+        } finally {
+            shutdown();
         }
     }
 
-    // Métodos para calcular Fibonacci y factores primos
-    public static String fibonacci(int n) {
-        if (n <= 0) return "";
-        StringBuilder result = new StringBuilder();
-        int a = 0, b = 1;
-        result.append(a).append(" ");
-        for (int i = 1; i < n; i++) {
-            result.append(b).append(" ");
-            int next = a + b;
-            a = b;
-            b = next;
-        }
-        return result.toString().trim();
-    }
-
-    public static String primeFactors(int n) {
-        StringBuilder result = new StringBuilder();
-        while (n % 2 == 0) {
-            result.append(2).append(" ");
-            n /= 2;
-        }
-        for (int i = 3; i <= Math.sqrt(n); i += 2) {
-            while (n % i == 0) {
-                result.append(i).append(" ");
-                n /= i;
+    public void shutdown() {
+        isRunning = false;
+        if (communicator != null) {
+            try {
+                communicator.shutdown();
+            } catch (java.lang.Exception e) {
+                e.printStackTrace();
             }
         }
-        if (n > 2) {
-            result.append(n).append(" ");
+        threadPool.shutdown();
+        try {
+            if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                threadPool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            threadPool.shutdownNow();
         }
-        return result.toString().trim();
+        System.out.println("Servidor cerrado.");
+    }
+
+    public Response handleClient(Callable<Response> task) {
+        try {
+            return threadPool.submit(task).get();
+        } catch (java.lang.Exception e) {
+            e.printStackTrace();
+            return new Response(1, "Error processing request");
+        }
+    }
+
+    public static void main(String[] args) {
+        Server server = new Server();
+        server.start(args);
     }
 }
