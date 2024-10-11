@@ -5,6 +5,9 @@ import calculations.PrimeFactorService;
 import network.NetworkService;
 import network.PortScannerService;
 import system.SystemCommandService;
+import communication.ClientCommunicationService;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 
 public class PrinterI implements Demo.Printer {
     private FibonacciService fibonacciService = new FibonacciService();
@@ -12,18 +15,46 @@ public class PrinterI implements Demo.Printer {
     private NetworkService networkService = new NetworkService();
     private PortScannerService portScannerService = new PortScannerService();
     private SystemCommandService systemCommandService = new SystemCommandService();
+    private ClientCommunicationService communicationService = new ClientCommunicationService();
+    private ExecutorService threadPool;
+
+    public PrinterI(ExecutorService threadPool) {
+        this.threadPool = threadPool;
+    }
 
     @Override
     public Response printString(String s, Current current) {
-        String[] parts = s.split(":", 4);
-        String userHostname = parts[0];
-        String clientIP = parts.length > 2 ? parts[1] : "unknown";
-        String message = parts.length > 2 ? parts[3] : parts[2];
+        CompletableFuture<Response> future = CompletableFuture.supplyAsync(() -> {
+            String[] parts = s.split(":", 4);
+            String userHostname = parts[0];
+            String clientIP = parts.length > 2 ? parts[1] : "unknown";
+            String message = parts.length > 2 ? parts[3] : parts[2];
 
+            System.out.println(userHostname + ":" + clientIP + " - Processing request: " + message);
+
+            if (message.startsWith("register")) {
+                return communicationService.registerClient(userHostname, clientIP, current);
+            } else if (message.equals("list clients")) {
+                return communicationService.listClients();
+            } else if (message.startsWith("to ")) {
+                return communicationService.sendToClient(userHostname, message, current);
+            } else if (message.startsWith("BC ")) {
+                return communicationService.broadcast(userHostname, message.substring(3), current);
+            } else {
+                return handleExistingFunctionality(userHostname, clientIP, message);
+            }
+        }, threadPool);
+
+        try {
+            return future.get();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Response(1, "Error processing request: " + e.getMessage());
+        }
+    }
+
+    private Response handleExistingFunctionality(String userHostname, String clientIP, String message) {
         String responseMessage = "";
-
-        // Imprime los detalles iniciales del cliente y su mensaje
-        System.out.println(userHostname + ":" + clientIP + " - Processing request: " + message);
 
         try {
             int number = Integer.parseInt(message.trim());
@@ -31,7 +62,6 @@ public class PrinterI implements Demo.Printer {
                 String fibonacciSeries = fibonacciService.calculateFibonacci(number);
                 String primeFactors = primeFactorService.calculatePrimeFactors(number);
                 
-                // Imprime la serie de Fibonacci y los factores primos en el servidor
                 System.out.println(userHostname + ":" + clientIP + ": Fibonacci Series up to " + number + ": " + fibonacciSeries);
                 System.out.println(userHostname + ":" + clientIP + ": Prime Factors: " + primeFactors);
 

@@ -8,4 +8,7 @@ module Demo
     {
         Response printString(string s);
     }
+     interface ClientCallback {
+        void receiveMessage(string sender, string message);
+    };
 }

@@ -1,54 +1,54 @@
-import Demo.Response;
+import Demo.*;
+import com.zeroc.Ice.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.ArrayList;
 
-public class Client
-{
-    public static void main(String[] args)
-    {
-        java.util.List<String> extraArgs = new java.util.ArrayList<>();
+public class Client {
+    public static void main(String[] args) {
+        try (Communicator communicator = Util.initialize(args, "config.client")) {
+            ObjectAdapter adapter = communicator.createObjectAdapter("");
+            ClientCallbackI callback = new ClientCallbackI();
+            adapter.activate();
 
-        try(com.zeroc.Ice.Communicator communicator = com.zeroc.Ice.Util.initialize(args,"config.client",extraArgs))
-        {
-            Response response = null;
-            Demo.PrinterPrx service = Demo.PrinterPrx
-                    .checkedCast(communicator.propertyToProxy("Printer.Proxy"));
-            
-            if(service == null)
-            {
+            PrinterPrx printer = PrinterPrx.checkedCast(communicator.propertyToProxy("Printer.Proxy"));
+            if (printer == null) {
                 throw new Error("Invalid proxy");
             }
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-            String message;
             String userHostname = System.getProperty("user.name") + ":" + java.net.InetAddress.getLocalHost().getHostName();
             String clientIP = java.net.InetAddress.getLocalHost().getHostAddress();
 
+            // Register the client
+            Response response = printer.printString(userHostname + ":" + clientIP + ":register ");
+            System.out.println("Server response: " + response.value);
+
             while (true) {
                 System.out.print("Enter message (or 'exit' to quit): ");
-                message = reader.readLine();
+                String message = reader.readLine();
                 if ("exit".equalsIgnoreCase(message)) {
                     break;
                 }
-                message = userHostname + ":" + clientIP + ":" + message;
 
-                Instant start = Instant.now(); // Registrar el tiempo antes de enviar el mensaje
-                
-                response = service.printString(message);
-
-                Instant end = Instant.now(); // Registrar el tiempo después de recibir la respuesta
-                Duration delay = Duration.between(start, end); // Calcular el tiempo de delay
+                Instant start = Instant.now();
+                response = printer.printString(userHostname + ":" + clientIP + ":" + message);
+                Instant end = Instant.now();
+                Duration delay = Duration.between(start, end);
 
                 System.out.println("Server response: " + response.value);
                 System.out.println("Time taken for the response: " + delay.toMillis() + " ms");
             }
-        }
-        catch (Exception e) {
+        } catch (java.lang.Exception e) {
             e.printStackTrace();
         }
+    }
+}
+
+class ClientCallbackI implements ClientCallback {
+    @Override
+    public void receiveMessage(String sender, String message, Current current) {
+        System.out.println("Received message from " + sender + ": " + message);
     }
 }
