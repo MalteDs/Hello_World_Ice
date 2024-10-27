@@ -8,8 +8,8 @@ import java.util.*;
 public class ClientCommunicationService {
     private ConcurrentHashMap<String, ClientInfo> registeredClients = new ConcurrentHashMap<>();
 
-    public Response registerClient(String hostname, String clientIP, Current current) {
-        registeredClients.put(hostname, new ClientInfo(current.con, clientIP));
+    public Response registerClient(String hostname, String clientIP, CallbackPrx callback, Current current) {
+        registeredClients.put(hostname, new ClientInfo(callback, clientIP));
         String responseMessage = "Cliente registrado: " + hostname;
         System.out.println(responseMessage);
         return new Response(0, responseMessage);
@@ -32,19 +32,25 @@ public class ClientCommunicationService {
         String actualMessage = parts[2];
         
         ClientInfo targetClient = registeredClients.get(targetHostname);
-        if (targetClient != null) {
+        if (targetClient != null && targetClient.callback != null) {
             try {
-                PrinterPrx printer = PrinterPrx.uncheckedCast(targetClient.connection.createProxy(current.id));
-                String fullMessage = "Mensaje de " + senderHostname + ": " + actualMessage;
-                printer.printString(fullMessage);
-                System.out.println(senderHostname + " - Mensaje enviado a " + targetHostname);
-                return new Response(0, "Mensaje enviado a " + targetHostname);
+                // Intentar enviar el mensaje
+                System.out.println("Intentando enviar mensaje a " + targetHostname);
+                targetClient.callback.receiveMessage(senderHostname, actualMessage);
+                System.out.println("Mensaje enviado exitosamente a " + targetHostname);
+                return new Response(0, "Mensaje enviado exitosamente a " + targetHostname);
             } catch (java.lang.Exception e) {
-                System.err.println("Error al enviar mensaje a " + targetHostname + ": " + e.getMessage());
-                return new Response(1, "Error al enviar mensaje a " + targetHostname);
+                String errorMessage = "Error al enviar mensaje a " + targetHostname + ": " + e.getMessage();
+                System.err.println(errorMessage);
+                e.printStackTrace();  // Para ver el stack trace completo
+                return new Response(1, errorMessage);
             }
         } else {
-            return new Response(1, "Cliente " + targetHostname + " no encontrado");
+            String error = targetClient == null ? 
+                "Cliente " + targetHostname + " no encontrado" :
+                "Callback no disponible para " + targetHostname;
+            System.err.println(error);
+            return new Response(1, error);
         }
     }
 
@@ -53,15 +59,17 @@ public class ClientCommunicationService {
         List<String> failedClients = new ArrayList<>();
 
         for (Map.Entry<String, ClientInfo> entry : registeredClients.entrySet()) {
-            if (!entry.getKey().equals(senderHostname)) {
-                try {
-                    PrinterPrx printer = PrinterPrx.uncheckedCast(entry.getValue().connection.createProxy(current.id));
-                    String fullMessage = "Broadcast de " + senderHostname + ": " + message;
-                    printer.printString(fullMessage);
-                    successCount++;
-                } catch (java.lang.Exception e) {
-                    System.err.println("Error al enviar broadcast a " + entry.getKey() + ": " + e.getMessage());
-                    failedClients.add(entry.getKey());
+            String targetHostname = entry.getKey();
+            if (!targetHostname.equals(senderHostname)) {
+                ClientInfo clientInfo = entry.getValue();
+                if (clientInfo.callback != null) {
+                    try {
+                        clientInfo.callback.receiveMessage(senderHostname, message);
+                        successCount++;
+                    } catch (java.lang.Exception e) {
+                        System.err.println("Error al enviar broadcast a " + targetHostname + ": " + e.getMessage());
+                        failedClients.add(targetHostname);
+                    }
                 }
             }
         }
@@ -75,11 +83,11 @@ public class ClientCommunicationService {
     }
 
     private static class ClientInfo {
-        Connection connection;
+        CallbackPrx callback;
         String ip;
 
-        ClientInfo(Connection connection, String ip) {
-            this.connection = connection;
+        ClientInfo(CallbackPrx callback, String ip) {
+            this.callback = callback;
             this.ip = ip;
         }
     }

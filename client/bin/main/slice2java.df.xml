@@ -1,11 +1,14 @@
 <state>
-  <timestamp value='1726501058549' />
+  <timestamp value='1730017236652' />
   <sourceSet name='default'>
-    <source name='C:\Users\dmalt\OneDrive\WorkSpace\2024 - 2\Ingesoft\Hello_World_Ice\Printer.ice'>
-      <file name='C:\Users\dmalt\OneDrive\WorkSpace\2024 - 2\Ingesoft\Hello_World_Ice\client\build\generated-src\Demo\Response.java' />
-      <file name='C:\Users\dmalt\OneDrive\WorkSpace\2024 - 2\Ingesoft\Hello_World_Ice\client\build\generated-src\Demo\Printer.java' />
-      <file name='C:\Users\dmalt\OneDrive\WorkSpace\2024 - 2\Ingesoft\Hello_World_Ice\client\build\generated-src\Demo\PrinterPrx.java' />
-      <file name='C:\Users\dmalt\OneDrive\WorkSpace\2024 - 2\Ingesoft\Hello_World_Ice\client\build\generated-src\Demo\_PrinterPrxI.java' />
+    <source name='D:\GitWorkspace\Ing\Hello_World_Ice\Printer.ice'>
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\Callback.java' />
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\Response.java' />
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\Printer.java' />
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\CallbackPrx.java' />
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\_CallbackPrxI.java' />
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\PrinterPrx.java' />
+      <file name='D:\GitWorkspace\Ing\Hello_World_Ice\client\build\generated-src\Demo\_PrinterPrxI.java' />
     </source>
     <arg value='C:\Program Files\ZeroC\Ice-3.7.10\\bin\slice2java.exe' />
     <arg value='-IC:\Program Files\ZeroC\Ice-3.7.10\\slice' />
